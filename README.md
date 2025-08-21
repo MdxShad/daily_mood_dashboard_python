@@ -14,7 +14,6 @@ This project uses **GitHub Actions** to run daily, log your entries into `log.md
 - 📝 Simple markdown log (`log.md`)
 - 🔒 Lightweight, open-source, and privacy-friendly
 
----https://github.com/saumyakumarchauhan/daily-mood-dashboard.git
 
 ## 📜 License
 
