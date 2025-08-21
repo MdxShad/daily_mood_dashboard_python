@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌈 Mood & Productivity Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --bg: #f9fbfd;
+      --fg: #222;
+      --card: #ffffff;
+      --accent: #5b36f0;
+    }
+    body.dark {
+      --bg: #121212;
+      --fg: #e0e0e0;
+      --card: #1f1f1f;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      padding: 0 1rem;
+      transition: all 0.4s ease;
+    }
+    h1, h2 {
+      text-align: center;
+      color: var(--accent);
+      margin-top: 2rem;
+      transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+    }
+    h1:hover, h2:hover {
+      transform: scale(1.03);
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 2rem 1rem;
+    }
+    .toggle-btn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.6rem 1.2rem;
+      background: var(--card);
+      color: var(--fg);
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      z-index: 10;
+    }
+    .toggle-btn:hover {
+      background-color: var(--accent);
+      color: white;
+    }
+    .quote, .summary {
+      text-align: center;
+      font-size: 1.1rem;
+      margin: 1.5rem 0;
+    }
+    #greeting {
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+    canvas {
+      width: 100% !important;
+      max-width: 800px;
+      margin: 2rem auto;
+      display: block;
+      background: var(--card);
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .heatmap {
+      margin: 2rem 0;
+      text-align: center;
+    }
+    .heatmap img {
+      border-radius: 10px;
+      max-width: 100%;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    .legend {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
+    .mood-face {
+      display: block;
+      margin: 1rem auto;
+      width: 80px;
+    }
+    pre {
+      background: var(--card);
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    footer.footer-banner {
+      width: 100%;
+      background-color: var(--card);
+      padding: 1rem 0;
+      margin-top: 3rem;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+    .footer-content {
+      max-width: 800px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      font-size: 0.95rem;
+      color: var(--fg);
+      transition: transform 0.3s;
+    }
+    .footer-content:hover {
+      transform: scale(1.02);
+    }
+    .footer-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+    .footer-text strong {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+    .footer-text span {
+      font-size: 0.85rem;
+      color: #888;
+    }
+    .footer-banner i {
+      font-size: 1.4rem;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <button class="toggle-btn" onclick="toggleDarkMode()">🌓 Toggle Dark Mode</button>
+
+  <div class="container">
+    <h1>🌈 Mood & Productivity Dashboard</h1>
+    <p id="greeting"></p>
+    <p class="quote" id="daily-quote">Loading quote...</p>
+
+    <h2>📊 Weekly Mood & Productivity Trend</h2>
+    <select id="chartType" style="display:block;margin:auto;">
+      <option value="line">Line</option>
+      <option value="bar">Bar</option>
+    </select>
+    <canvas id="trendChart"></canvas>
+
+    <div class="legend">
+      <span>😞 Very Low</span> • <span>🙁 Low</span> • <span>😐 Neutral</span> • <span>🙂 Good</span> • <span>😄 Great</span>
+    </div>
+
+    <div class="summary" id="summary">Calculating weekly average...</div>
+    <img id="mood-face" class="mood-face" src="neutral.png" alt="Mood Face">
+
+    <div class="heatmap">
+  <h2>📅 Calendar Heatmaps</h2>
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem;">
+    <div>
+      <img src="mood_calendar.png" alt="Mood Calendar Heatmap" style="max-width: 100%; border-radius: 10px;">
+    </div>
+    
+  </div>
+</div>
+
+
+    <h2>📘 Mood Logs</h2>
+    <pre id="log-content">Loading logs...</pre>
+  </div>
+
+  <footer class="footer-banner">
+    <div class="footer-content">
+      <i class="fas fa-code"></i>
+      <div class="footer-text">
+        <strong>Saumyakumar Chauhan</strong>
+        <span>B.Tech CSE @ IIIT Kota • B.S. Data Science @ IIT Madras</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+    document.getElementById("greeting").innerText = `${greeting}, Saumya 👋`;
+
+    const quotes = [
+      "Keep going. You're getting there.",
+      "Progress is better than perfection.",
+      "Be proud of how far you’ve come!",
+      "Smile — it's free therapy 😄"
+    ];
+    let q = 0;
+    setInterval(() => {
+      document.getElementById("daily-quote").innerText = "💬 " + quotes[q % quotes.length];
+      q++;
+    }, 5000);
+
+    fetch('log.md')
+      .then(res => res.text())
+      .then(text => {
+        document.getElementById('log-content').innerText = text;
+
+        const lines = text.trim().split('\n').reverse();
+        const moodScores = { "😞": 1, "🙁": 2, "😐": 3, "🙂": 4, "😄": 5 };
+        const prodScores = { "Low": 1, "Medium": 2, "High": 3 };
+        let dates = [], moods = [], prods = [], moodSum = 0, prodSum = 0, count = 0;
+        let latestMood = "😐";
+
+        lines.forEach(line => {
+          if (line.startsWith("- Mood:")) {
+            const mood = line.match(/Mood:\s*(\S+)/)?.[1];
+            const prod = line.match(/Productivity:\s*(\w+)/)?.[1];
+            const date = line.match(/Date:\s*([\d-]+)/)?.[1];
+            if (mood && prod && date) {
+              moods.push(moodScores[mood] || 3);
+              prods.push(prodScores[prod] || 2);
+              dates.push(date);
+              moodSum += moodScores[mood] || 3;
+              prodSum += prodScores[prod] || 2;
+              latestMood = mood;
+              count++;
+            }
+          }
+        });
+
+        if (count > 0) {
+          const avgMood = (moodSum / count).toFixed(2);
+          const avgProd = (prodSum / count).toFixed(2);
+          document.getElementById('summary').innerText = `🌟 Weekly Averages → Mood: ${avgMood}/5 | Productivity: ${avgProd}/3`;
+        }
+
+        const chartTypeSelector = document.getElementById("chartType");
+        const ctx = document.getElementById('trendChart');
+        let chart;
+        function renderChart(type = 'line') {
+          if (chart) chart.destroy();
+          chart = new Chart(ctx, {
+            type,
+            data: {
+              labels: dates.slice(0, 7).reverse(),
+              datasets: [
+                {
+                  label: "Mood",
+                  data: moods.slice(0, 7).reverse(),
+                  borderColor: "#42a5f5",
+                  backgroundColor: "rgba(66,165,245,0.6)",
+                  borderWidth: 2,
+                  tension: 0.3,
+                },
+                {
+                  label: "Productivity",
+                  data: prods.slice(0, 7).reverse(),
+                  borderColor: "#66bb6a",
+                  backgroundColor: "rgba(66,165,245,0.6)",
+                  borderWidth: 2,
+                  tension: 0.3,
+                },
+              ]
+            },
+            options: {
+              responsive: true,
+              animation: { duration: 1000 },
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function(ctx) {
+                      return `${ctx.dataset.label}: ${ctx.raw}`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 5,
+                  ticks: {
+                    stepSize: 1,
+                    callback: value => ['❌', '😞', '🙁', '😐', '🙂', '😄'][value]
+                  }
+                }
+              }
+            }
+          });
+        }
+        renderChart();
+        chartTypeSelector.addEventListener("change", e => renderChart(e.target.value));
+
+        if (latestMood === "😄") confetti();
+
+        const moodFace = document.getElementById("mood-face");
+        const moodFaces = {
+          "😞": "sad.png",
+          "🙁": "low.png",
+          "😐": "neutral.png",
+          "🙂": "happy.png",
+          "😄": "grin.png"
+        };
+        moodFace.src = moodFaces[latestMood] || "neutral.png";
+      });
+  </script>
+</body>
+</html>
