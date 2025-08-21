@@ -1,0 +1,63 @@
+name: Daily Mood Update
+
+on:
+  schedule:
+    - cron: '15 4 * * *'  # Runs daily at 04:15 UTC
+  workflow_dispatch:
+
+jobs:
+  update-log:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install matplotlib pandas calplot
+
+      - name: Update log.md (Saumyakumar Chauhan)
+        run: |
+          moods=("😞" "🙁" "😐" "🙂" "😄")
+          productivity_levels=("Low" "Medium" "High")
+          quotes=("Believe you can and you're halfway there."
+                  "Every day is a second chance."
+                  "Push yourself, because no one else is going to do it for you."
+                  "Small steps every day lead to big results."
+                  "Stay positive, work hard, make it happen.")
+
+          RANDOM_MOOD=${moods[$RANDOM % ${#moods[@]}]}
+          RANDOM_PROD=${productivity_levels[$RANDOM % ${#productivity_levels[@]}]}
+          RANDOM_QUOTE="${quotes[$RANDOM % ${#quotes[@]}]}"
+
+          echo "## Log Entry: $(date)" >> log.md
+          echo "- Mood: $RANDOM_MOOD | Productivity: $RANDOM_PROD | Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> log.md
+          echo "- Reflection: \"$RANDOM_QUOTE\"" >> log.md
+          echo "" >> log.md
+
+      - name: Generate mood & productivity plot
+        run: python plots/generate_plot.py
+
+      - name: Generate mood calendar heatmap
+        run: python plots/generate_calendar.py
+
+      - name: Copy files to docs/
+        run: |
+          cp log.md docs/
+          cp plots/mood_trend.png docs/
+          cp plots/mood_calendar.png docs/
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/ log.md
+          git commit -m "Daily log update [skip ci]" || echo "No changes to commit"
+          git push
